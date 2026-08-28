@@ -185,7 +185,7 @@ class AtlasCloudVideoProvider:
 
         # Polling loop
         poll_interval = 5
-        max_attempts = 60  # 5 minutes maximum
+        max_attempts = 180  # 15 minutes maximum (MiniMax H3 can take ~6min per clip)
         video_url: str | None = None
         for attempt in range(max_attempts):
             await asyncio.sleep(poll_interval)
@@ -199,7 +199,11 @@ class AtlasCloudVideoProvider:
 
                 prediction = pred_data.get("data", pred_data)
                 status = prediction.get("status")
-                if status == "completed":
+                logger.info(
+                    "Prediction %s poll %s/%s: status=%s",
+                    prediction_id, attempt + 1, max_attempts, status,
+                )
+                if status in ("completed", "succeeded"):
                     outputs = prediction.get("outputs", [])
                     if outputs:
                         video_url = outputs[0]
@@ -213,7 +217,7 @@ class AtlasCloudVideoProvider:
                             remote_prediction_id=prediction_id,
                             error="Prediction completed but outputs list is empty",
                         )
-                elif status == "failed":
+                elif status in ("failed", "error", "canceled"):
                     error_msg = prediction.get("error") or "Unknown error"
                     return VideoSceneAsset(
                         scene_id=scene_id,
