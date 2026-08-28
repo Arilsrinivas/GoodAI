@@ -22,7 +22,7 @@ class PromptEngineeringAgent:
         locations: list[LocationMemory],
         objects: list[ObjectMemory],
     ) -> tuple[str, str, str]:
-        target_model = getattr(request, "target_model", TargetVideoModel.minimax_h3)
+        target_model = getattr(request, "target_model", TargetVideoModel.seedance_2_mini)
 
         # Format full character sheets for high visual consistency
         char_descs = []
@@ -65,6 +65,7 @@ class PromptEngineeringAgent:
         object_details = "\n".join(obj_descs) or "None"
 
         model_refinement_instructions = {
+            TargetVideoModel.seedance_2_mini: "Optimize for Seedance 2.0 Mini: concise, specific cinematic action and camera direction for a cost-efficient, fast generation clip.",
             TargetVideoModel.minimax_h3: "Optimize for MiniMax H3 Developer: high character consistency, natural fluid motion, cinematic physical realism, detailed environmental lighting.",
             TargetVideoModel.seedance_v15_pro: "Optimize for Seedance v1.5 Pro: high motion fidelity, precise camera tracking, fluid physics, cinematic photorealism.",
             TargetVideoModel.seedance_v15_pro_fast: "Optimize for Seedance v1.5 Pro Fast: concise cinematic action with rapid generation, balanced quality and speed.",

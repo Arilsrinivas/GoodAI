@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from uuid import UUID
 
+from backend.app.agents.narration import NarrationAgent
 from backend.app.application.ports import StoryPlanRepository, VideoProvider
 from backend.app.domain.models import JobStatus, MovieExport, StoryPlan, VideoSceneAsset
 
@@ -127,8 +128,11 @@ class VideoExportService:
                     and scene.narration
                 ):
                     try:
-                        logger.info("Generating TTS audio for scene %s", scene.order)
-                        audio_bytes = await self.tts_client.generate_tts_audio(scene.narration)
+                        clean_narration_for_tts = NarrationAgent._clean_narration(scene.narration)
+                        if not clean_narration_for_tts:
+                            clean_narration_for_tts = scene.narration
+                        logger.info("Generating TTS audio for scene %s: %s", scene.order, clean_narration_for_tts[:60])
+                        audio_bytes = await self.tts_client.generate_tts_audio(clean_narration_for_tts)
                         audio_format = getattr(self.tts_client, "audio_format", "pcm_s16le")
                         audio_extension = "mp3" if audio_format == "mp3" else "raw"
                         audio_path = videos_dir / f"scene_{scene.order:03d}_narration.{audio_extension}"

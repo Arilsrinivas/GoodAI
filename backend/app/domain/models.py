@@ -34,6 +34,7 @@ class NarrationStyle(StrEnum):
 
 
 class TargetVideoModel(StrEnum):
+    seedance_2_mini = "bytedance/seedance-2.0-mini/text-to-video"
     minimax_h3 = "minimax/h3-developer/text-to-video"
     seedance_v15_pro = "bytedance/seedance-v1.5-pro/text-to-video"
     seedance_v15_pro_fast = "bytedance/seedance-v1.5-pro/text-to-video-fast"
@@ -79,7 +80,7 @@ class StoryRequest(BaseModel):
     text: str = Field(min_length=1)
     video_style: VideoStyle = VideoStyle.realistic_cinema
     narration_style: NarrationStyle = NarrationStyle.storytelling
-    target_model: TargetVideoModel = TargetVideoModel.minimax_h3
+    target_model: TargetVideoModel = TargetVideoModel.seedance_2_mini
 
 
 class DocumentAnalyzeRequest(BaseModel):
@@ -88,7 +89,7 @@ class DocumentAnalyzeRequest(BaseModel):
     title: str | None = None
     video_style: VideoStyle = VideoStyle.realistic_cinema
     narration_style: NarrationStyle = NarrationStyle.storytelling
-    target_model: TargetVideoModel = TargetVideoModel.minimax_h3
+    target_model: TargetVideoModel = TargetVideoModel.seedance_2_mini
 
 
 class Chapter(BaseModel):
