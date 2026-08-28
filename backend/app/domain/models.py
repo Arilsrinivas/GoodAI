@@ -34,6 +34,7 @@ class NarrationStyle(StrEnum):
 
 
 class TargetVideoModel(StrEnum):
+    minimax_h3 = "minimax/video-01/text-to-video"
     seedance_2_mini = "bytedance/seedance-2.0-mini/text-to-video"
     kling = "kling-v2.0"
     google_veo = "google-veo"
