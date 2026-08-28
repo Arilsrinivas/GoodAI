@@ -78,6 +78,18 @@ class GeminiLLMClient:
                     response = await client.request(method, url, **kwargs)
                     response.raise_for_status()
                     return response.json()
+            except httpx.HTTPStatusError as exc:
+                last_error = exc
+                if exc.response.status_code == 400:
+                    logger.warning("Gemini LLM returned HTTP 400 Bad Request (non-retryable key/model error). Using instant fallback.")
+                    break
+                logger.warning(
+                    "Gemini LLM request failed on attempt %s/%s: %s",
+                    attempt,
+                    self.max_retries,
+                    _safe_error_message(exc),
+                )
+                await asyncio.sleep(min(2**attempt, 8))
             except (httpx.HTTPError, json.JSONDecodeError) as exc:
                 last_error = exc
                 logger.warning(
@@ -87,7 +99,7 @@ class GeminiLLMClient:
                     _safe_error_message(exc),
                 )
                 await asyncio.sleep(min(2**attempt, 8))
-        raise RuntimeError("Gemini LLM request failed after retries") from last_error
+        raise RuntimeError("Gemini LLM request failed") from last_error
 
 
 class GeminiTTSClient:
