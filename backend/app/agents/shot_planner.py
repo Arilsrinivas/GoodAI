@@ -17,22 +17,37 @@ class ShotPlannerAgent:
         return all_shots
 
     async def plan_scene_shots(self, scene: SceneMemory) -> list[Shot]:
-        shot_sequence = [
-            (ShotType.wide, "Wide establishing tracking shot", "Establishes scene environment and character placement"),
-            (ShotType.medium, "Medium character tracking camera move", "Focuses on character action and immediate interaction"),
-            (ShotType.close_up, "Close up reaction push-in", "Captures emotional facial expression and key focal details"),
+        # Vary shot patterns based on scene.order so shots are different every time
+        shot_pools = [
+            [
+                (ShotType.wide, "Wide establishing tracking shot", "Establishes scene environment and character placement"),
+                (ShotType.medium, "Medium character tracking camera move", "Focuses on character action and immediate interaction"),
+                (ShotType.close_up, "Close up reaction push-in", "Captures emotional facial expression and key focal details"),
+            ],
+            [
+                (ShotType.medium, "Over-shoulder dialogue tracking shot", "Framed past character shoulder focusing on listener's reaction"),
+                (ShotType.close_up, "Tight close-up intense eye lock", "Focusses on emotional realization and subtle expression"),
+                (ShotType.drone, "Low-angle dynamic tracking dolly", "Sweeping camera angle following physical character movement"),
+            ],
+            [
+                (ShotType.low_angle, "Low-angle hero perspective shot", "Emphasizes scale, power dynamics, and dramatic tension"),
+                (ShotType.medium, "Fast lateral tracking shot", "Tracks character across the scene environment"),
+                (ShotType.wide, "High-angle dramatic crane shot", "Pulls back to reveal environmental impact"),
+            ],
         ]
+        shot_sequence = shot_pools[(scene.order - 1) % len(shot_pools)]
 
         if self.llm_client and getattr(self.llm_client, "is_configured", False):
             try:
                 system_prompt = (
                     "You are a Hollywood Director of Photography and Shot Planner. "
                     "Break down the given scene into 2 to 3 cinematic shots. "
-                    "Select appropriate shot types from: wide_shot, close_up, medium_shot, drone_shot, tracking_shot, pov, over_shoulder, low_angle, high_angle, orbit, dutch_angle."
+                    "Select appropriate shot types from: wide_shot, close_up, medium_shot, drone_shot, tracking_shot, pov, over_shoulder, low_angle, high_angle, orbit, dutch_angle.\n"
+                    "Ensure shots are distinct, dynamic, and non-repeating."
                 )
                 user_prompt = (
                     f"Scene #{scene.order}: '{scene.title}'\n"
-                    f"Narration: {scene.narration}\n"
+                    f"Action Beat: {scene.narration}\n"
                     f"Prompt Context: {scene.prompt}\n"
                     f"Characters Present: {', '.join(scene.characters)}\n"
                     f"Environment: {scene.environment}\n\n"
@@ -69,7 +84,7 @@ class ShotPlannerAgent:
             except Exception as exc:
                 logger.warning("LLM shot planning fallback for scene %s: %s", scene.order, exc)
 
-        # Default heuristic multi-shot breakdown
+        # Dynamic heuristic multi-shot breakdown
         shots: list[Shot] = []
         for idx, (st, move, summary) in enumerate(shot_sequence, start=1):
             shots.append(
