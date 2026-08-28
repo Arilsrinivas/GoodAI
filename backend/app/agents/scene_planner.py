@@ -58,10 +58,15 @@ class ScenePlannerAgent:
 
 class ContinuityAgent:
     async def apply(self, scenes: list[SceneMemory]) -> list[SceneMemory]:
-        previous_ending = "Opening frame establishes the story world."
-        continued: list[SceneMemory] = []
+        """Ensure each scene is completely distinct and independent, with no frame-carryover continuity."""
+        distinct_scenes: list[SceneMemory] = []
         for scene in scenes:
-            updated = scene.model_copy(update={"opening_frame": previous_ending})
-            previous_ending = updated.ending_frame
-            continued.append(updated)
-        return continued
+            updated = scene.model_copy(
+                update={
+                    "opening_frame": f"Scene {scene.order} establishing shot: {scene.title}",
+                    "ending_frame": f"Scene {scene.order} distinct finale: {scene.title}",
+                    "transitions": f"Cut to Scene {scene.order}",
+                }
+            )
+            distinct_scenes.append(updated)
+        return distinct_scenes

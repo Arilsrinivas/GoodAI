@@ -87,7 +87,6 @@ class VideoExportService:
                     for scene in plan.scenes
                 ]
 
-            reference_frame_path: str | None = None
             for idx, scene in enumerate(plan.scenes):
                 # Update status of this scene to processing and save
                 video_assets[idx].status = JobStatus.processing
@@ -110,13 +109,14 @@ class VideoExportService:
                 )
                 await self.repository.save_export(intermediate_export)
 
+                # Each scene is an independent, distinct camera shot with no carryover from the previous scene
                 asset = await self.video_provider.generate_scene_video(
                     scene.id,
                     scene.prompt,
                     scene.duration_seconds,
                     str(videos_dir),
                     scene.order,
-                    reference_frame_path=reference_frame_path,
+                    reference_frame_path=None,
                 )
 
                 # Narration audio synthesis and merging if configured
@@ -188,7 +188,6 @@ class VideoExportService:
                         logger.warning("Failed to generate/merge narration audio for scene %s: %s", scene.order, exc)
 
                 video_assets[idx] = asset
-                reference_frame_path = asset.final_frame_path or reference_frame_path
 
                 # Save intermediate status after finishing this scene
                 intermediate_export.video_assets = video_assets

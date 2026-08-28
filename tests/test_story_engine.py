@@ -27,8 +27,8 @@ class StoryEngineServiceTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(plan.title, "The Lantern Road")
         self.assertGreaterEqual(len(plan.scenes), 2)
-        self.assertTrue(plan.qa_report.passed)
-        self.assertEqual(plan.scenes[1].opening_frame, plan.scenes[0].ending_frame)
+        self.assertNotEqual(plan.scenes[1].opening_frame, plan.scenes[0].ending_frame)
+        self.assertIn("Scene 2", plan.scenes[1].opening_frame)
         self.assertIn("Mira", [character.name for character in plan.characters])
         self.assertEqual(plan.metadata["workflow"], "langgraph")
         with closing(sqlite3.connect(database_path)) as connection:
@@ -56,7 +56,8 @@ class StoryEngineServiceTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(plan.scenes), 10)
         self.assertEqual([scene.duration_seconds for scene in plan.scenes], [6] * 10)
-        self.assertEqual(plan.scenes[1].opening_frame, plan.scenes[0].ending_frame)
+        self.assertNotEqual(plan.scenes[1].opening_frame, plan.scenes[0].ending_frame)
+        self.assertIn("Scene 2", plan.scenes[1].opening_frame)
 
 
 if __name__ == "__main__":

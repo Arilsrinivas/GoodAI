@@ -125,7 +125,7 @@ class StoryWorkflowRunner:
                     characters=[character.name for character in state["characters"]],
                     environment=state["locations"][0].name if state["locations"] else None,
                     camera=visual.camera,
-                    transitions="continuous cut from previous ending frame",
+                    transitions=f"Cut to Scene {blueprint['order']}",
                     visual_memory=visual,
                 )
             )

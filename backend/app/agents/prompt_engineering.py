@@ -77,32 +77,28 @@ class PromptEngineeringAgent:
         if self.llm_client and getattr(self.llm_client, "is_configured", False):
             try:
                 system_prompt = (
-                    f"You are a senior cinematic AI prompt engineer specializing in {target_model.value}. "
-                    "Generate a production-ready, highly detailed positive video prompt, a negative prompt, and an ending frame description.\n\n"
-                    f"MODEL REFINEMENT SPECIFICATION: {model_refinement_instructions}\n\n"
-                    "Structure the positive prompt into a single cohesive, highly descriptive paragraph outlining:\n"
-                    "- STYLE: Selected style preset.\n"
-                    "- SCENE ACTION: Physical events matching the story text and narration.\n"
-                    "- CHARACTER LOOK: Facial structure, hair, eyes, height, clothing, power aura.\n"
-                    "- ENVIRONMENT: Architecture, lighting, weather, textures, palette.\n"
-                    "- CAMERA & MOTION: Shot size, lens, movement, focal depth."
-                    "\n- DIRECTING: Every scene must show a visible action, decision, journey, interaction, or discovery; never use a static portrait, talking head, seated thinker, slideshow, or documentary interview."
+                    f"You are a master cinematic AI video prompt engineer creating text-to-video prompts for {target_model.value}.\n\n"
+                    "CRITICAL RULES:\n"
+                    "1. DIRECT NARRATION MATCH: The video prompt MUST directly visualize what the NARRATION describes. "
+                    "What happens visually on screen MUST match the audio narration 1:1. "
+                    "If the narration describes a dragon talking to an owner and villagers disbelieving him, the video prompt MUST depict the dragon talking to the owner and the owner confronting the disbelieving villagers.\n"
+                    "2. SCENE INDEPENDENCE: Every scene is a fresh, standalone cinematic moment with a distinct camera angle, composition, and perspective. "
+                    "Do NOT continue the camera angle or frames from previous scenes.\n"
+                    "3. NATURAL CINEMATIC PROSE: Write natural, highly vivid action prose describing characters, their physical movements, gestures, environment, and camera framing. "
+                    "Do NOT include meta tags, brackets, or labels like 'STYLE:' or 'SCENE:'.\n"
+                    f"4. MODEL REFINEMENT: {model_refinement_instructions}"
                 )
                 user_prompt = (
-                    f"Generate a video prompt optimized for {target_model.value}:\n\n"
-                    f"STYLE PRESET: {request.video_style.value}\n"
-                    f"SCENE STORY TEXT: {scene_text}\n"
-                    f"NARRATION AUDIO CONTEXT: {narration}\n"
-                    f"CAMERA DIRECTIVES: {visual.camera}, lens {visual.lens}\n"
-                    f"LIGHTING & GRADING: {visual.lighting}, color grading {visual.color_grading}\n"
-                    f"COMPOSITION: {visual.composition}\n\n"
-                    f"CHARACTER VISUAL MEMORY:\n{character_details}\n\n"
-                    f"LOCATION VISUAL MEMORY:\n{location_details}\n\n"
-                    f"OBJECTS VISUAL MEMORY:\n{object_details}\n\n"
-                    f"Return only a JSON object with keys:\n"
-                    f"- 'prompt' (detailed positive text-to-video prompt for {target_model.value})\n"
-                    f"- 'negative_prompt' (unwanted artifacts, low quality, watermarks)\n"
-                    f"- 'ending_frame' (descriptive final frame representation for visual continuity)"
+                    f"Create a video prompt for {target_model.value} that DIRECTLY VISUALIZES this narration beat:\n\n"
+                    f"NARRATION (ACTION TO VISUALIZE ON SCREEN): {narration}\n"
+                    f"STORY CONTEXT: {scene_text}\n"
+                    f"VISUAL STYLE: {request.video_style.value}\n"
+                    f"CAMERA DIRECTIVE: {visual.camera}, {visual.composition}\n"
+                    f"LIGHTING & ATMOSPHERE: {visual.lighting}, {visual.color_grading}\n\n"
+                    "Return a JSON object with keys:\n"
+                    "- 'prompt': vivid descriptive prompt depicting the exact physical actions in the narration\n"
+                    "- 'negative_prompt': unwanted elements (watermarks, text, subtitles, blur, low quality)\n"
+                    "- 'ending_frame': brief description of this scene's final moment"
                 )
                 payload = await self.llm_client.complete_json(system_prompt, user_prompt)
                 prompt = payload.get("prompt")
@@ -113,19 +109,16 @@ class PromptEngineeringAgent:
             except Exception:
                 pass
 
-        character_text = ", ".join(character.name for character in characters[:5]) or "no named character yet"
-        location_text = ", ".join(location.name for location in locations[:3]) or "unspecified story world"
-        object_text = ", ".join(obj.name for obj in objects[:5]) or "no continuity-critical objects"
+        # Action-first deterministic fallback: directly visualize the narration
+        clean_action = narration.replace('"', '').replace("'", "").strip().rstrip(".")
+        style_desc = request.video_style.value.replace("_", " ")
+        camera_desc = visual.camera.replace("_", " ")
         prompt = (
-            f"STYLE [{target_model.value}]: {request.video_style.value} cinematic narrative film, not a documentary. "
-            f"Scene text: {scene_text}. Narration: {narration}. "
-            f"CHARACTERS: {character_text}. ENVIRONMENT: {location_text}. "
-            f"OBJECTS: {object_text}. CAMERA: {visual.camera}, lens {visual.lens}. "
-            f"LIGHTING: {visual.lighting}. COLOR GRADE: {visual.color_grading}. "
-            "Show characters actively moving through the story world, making decisions and interacting with meaningful objects. "
-            "No static portrait, seated thinker, talking head, slideshow, documentary interview, text overlay, or still image. "
-            "Maintain identity, clothing, object placement, and environment continuity from the preceding scene."
+            f"A cinematic {style_desc} scene showing: {clean_action}. "
+            f"Camera framing: {camera_desc}, {visual.composition}. "
+            f"Lighting: {visual.lighting}, color grading {visual.color_grading}. "
+            "Cinematic, 4k resolution, highly detailed, photorealistic, smooth dynamic motion."
         )
-        negative = "No watermarks, no text, no subtitles, inconsistent faces, random objects, low quality"
-        ending = f"Ending frame holds continuity with {character_text} in {location_text}."
+        negative = "watermarks, subtitles, text overlay, distorted faces, blurry, static slideshow, low quality"
+        ending = f"Scene conclusion: {clean_action[:80]}"
         return prompt, negative, ending
