@@ -18,8 +18,8 @@ class Settings(BaseModel):
     atlascloud_base_url: str = "https://api.atlascloud.ai/v1"
     atlascloud_media_base_url: str = "https://api.atlascloud.ai/api/v1"
     atlascloud_llm_model: str = "deepseek-v3"
-    atlascloud_video_model: str = "minimax/video-01/text-to-video"
-    atlascloud_reference_video_model: str = "minimax/video-01-live2d/text-to-video"
+    atlascloud_video_model: str = "minimax/h3-developer/text-to-video"
+    atlascloud_reference_video_model: str = "minimax/h3-developer/text-to-video"
     atlascloud_video_resolution: str = "480p"
     gemini_api_key: str | None = None
     gemini_llm_model: str = "gemini-2.0-flash"

@@ -22,7 +22,7 @@ class PromptEngineeringAgent:
         locations: list[LocationMemory],
         objects: list[ObjectMemory],
     ) -> tuple[str, str, str]:
-        target_model = getattr(request, "target_model", TargetVideoModel.seedance_2_mini)
+        target_model = getattr(request, "target_model", TargetVideoModel.minimax_h3)
 
         # Format full character sheets for high visual consistency
         char_descs = []
@@ -65,13 +65,12 @@ class PromptEngineeringAgent:
         object_details = "\n".join(obj_descs) or "None"
 
         model_refinement_instructions = {
-            TargetVideoModel.seedance_2_mini: "Optimize for Seedance 2.0 Mini: concise, specific cinematic action and camera direction for a cost-efficient low-resolution clip.",
-            TargetVideoModel.kling: "Optimize for Kling v2.0: High motion fidelity, precise camera tracking directives, fluid physics, cinematic photorealism.",
-            TargetVideoModel.google_veo: "Optimize for Google Veo: Ultra-high 4K realism, nuanced character facial expressions, dynamic temporal consistency.",
-            TargetVideoModel.runway_gen3: "Optimize for Runway Gen-3 Alpha: Stylized motion control, cinematic color grading, artistic camera dynamics.",
-            TargetVideoModel.luma_dream_machine: "Optimize for Luma Dream Machine: Smooth camera transitions, spatial depth, photorealistic lighting.",
-            TargetVideoModel.pika: "Optimize for Pika 2.0: Dynamic animation mechanics, clear subject isolation, vivid atmospheric effects.",
-            TargetVideoModel.hailuo: "Optimize for Hailuo MiniMax: High character consistency, natural fluid motion, physical realism.",
+            TargetVideoModel.minimax_h3: "Optimize for MiniMax H3 Developer: high character consistency, natural fluid motion, cinematic physical realism, detailed environmental lighting.",
+            TargetVideoModel.seedance_v15_pro: "Optimize for Seedance v1.5 Pro: high motion fidelity, precise camera tracking, fluid physics, cinematic photorealism.",
+            TargetVideoModel.seedance_v15_pro_fast: "Optimize for Seedance v1.5 Pro Fast: concise cinematic action with rapid generation, balanced quality and speed.",
+            TargetVideoModel.kling_v26_pro: "Optimize for Kling v2.6 Pro: Ultra-high motion fidelity, precise camera tracking directives, fluid physics, cinematic photorealism.",
+            TargetVideoModel.hailuo_23: "Optimize for Hailuo 2.3: High character consistency, natural fluid motion, physical realism, vivid atmospheric effects.",
+            TargetVideoModel.wan_26: "Optimize for Wan 2.6: Smooth camera transitions, spatial depth, photorealistic lighting, dynamic temporal consistency.",
         }.get(target_model, "Optimize for high quality cinematic text-to-video generation.")
 
         if self.llm_client and getattr(self.llm_client, "is_configured", False):

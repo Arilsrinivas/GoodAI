@@ -196,7 +196,7 @@ export default function Home() {
   );
   const [videoStyle, setVideoStyle] = useState("realistic_cinema");
   const [narrationStyle, setNarrationStyle] = useState("storytelling");
-  const [targetModel, setTargetModel] = useState("minimax/video-01/text-to-video");
+  const [targetModel, setTargetModel] = useState("minimax/h3-developer/text-to-video");
 
   const [inputMode, setInputMode] = useState<"text" | "upload">("text");
   const [fileData, setFileData] = useState<{ name: string; size: number; base64: string } | null>(null);
@@ -255,13 +255,12 @@ export default function Home() {
   ];
 
   const targetModels = [
-    { value: "minimax/video-01/text-to-video", label: "MiniMax H3 Developer AI (AtlasCloud)" },
-    { value: "bytedance/seedance-2.0-mini/text-to-video", label: "Seedance 2.0 Mini (Lowest Credits)" },
-    { value: "kling-v2.0", label: "Kling v2.0 AI (AtlasCloud)" },
-    { value: "google-veo", label: "Google Veo 4K Cinema" },
-    { value: "runway-gen3", label: "Runway Gen-3 Alpha" },
-    { value: "luma-dream-machine", label: "Luma Dream Machine" },
-    { value: "pika-2.0", label: "Pika 2.0 Motion" },
+    { value: "minimax/h3-developer/text-to-video", label: "MiniMax H3 Developer (AtlasCloud)" },
+    { value: "bytedance/seedance-v1.5-pro/text-to-video", label: "Seedance v1.5 Pro (AtlasCloud)" },
+    { value: "kwaivgi/kling-v2.6-pro/text-to-video", label: "Kling v2.6 Pro (AtlasCloud)" },
+    { value: "minimax/hailuo-2.3/t2v-standard", label: "Hailuo 2.3 Standard (AtlasCloud)" },
+    { value: "alibaba/wan-2.6/text-to-video", label: "Wan 2.6 (AtlasCloud)" },
+    { value: "bytedance/seedance-v1.5-pro/text-to-video-fast", label: "Seedance v1.5 Pro Fast (AtlasCloud)" },
   ];
 
   const handleDrag = (e: DragEvent<HTMLDivElement>) => {

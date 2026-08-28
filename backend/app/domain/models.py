@@ -34,14 +34,12 @@ class NarrationStyle(StrEnum):
 
 
 class TargetVideoModel(StrEnum):
-    minimax_h3 = "minimax/video-01/text-to-video"
-    seedance_2_mini = "bytedance/seedance-2.0-mini/text-to-video"
-    kling = "kling-v2.0"
-    google_veo = "google-veo"
-    runway_gen3 = "runway-gen3"
-    luma_dream_machine = "luma-dream-machine"
-    pika = "pika-2.0"
-    hailuo = "hailuo-minimax"
+    minimax_h3 = "minimax/h3-developer/text-to-video"
+    seedance_v15_pro = "bytedance/seedance-v1.5-pro/text-to-video"
+    seedance_v15_pro_fast = "bytedance/seedance-v1.5-pro/text-to-video-fast"
+    kling_v26_pro = "kwaivgi/kling-v2.6-pro/text-to-video"
+    hailuo_23 = "minimax/hailuo-2.3/t2v-standard"
+    wan_26 = "alibaba/wan-2.6/text-to-video"
 
 
 class ShotType(StrEnum):
@@ -81,7 +79,7 @@ class StoryRequest(BaseModel):
     text: str = Field(min_length=1)
     video_style: VideoStyle = VideoStyle.realistic_cinema
     narration_style: NarrationStyle = NarrationStyle.storytelling
-    target_model: TargetVideoModel = TargetVideoModel.seedance_2_mini
+    target_model: TargetVideoModel = TargetVideoModel.minimax_h3
 
 
 class DocumentAnalyzeRequest(BaseModel):
@@ -90,7 +88,7 @@ class DocumentAnalyzeRequest(BaseModel):
     title: str | None = None
     video_style: VideoStyle = VideoStyle.realistic_cinema
     narration_style: NarrationStyle = NarrationStyle.storytelling
-    target_model: TargetVideoModel = TargetVideoModel.seedance_2_mini
+    target_model: TargetVideoModel = TargetVideoModel.minimax_h3
 
 
 class Chapter(BaseModel):
