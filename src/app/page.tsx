@@ -196,7 +196,7 @@ export default function Home() {
   );
   const [videoStyle, setVideoStyle] = useState("realistic_cinema");
   const [narrationStyle, setNarrationStyle] = useState("storytelling");
-  const [targetModel, setTargetModel] = useState("bytedance/seedance-2.0-mini/text-to-video");
+  const [targetModel, setTargetModel] = useState("minimax/video-01/text-to-video");
 
   const [inputMode, setInputMode] = useState<"text" | "upload">("text");
   const [fileData, setFileData] = useState<{ name: string; size: number; base64: string } | null>(null);
@@ -255,13 +255,13 @@ export default function Home() {
   ];
 
   const targetModels = [
+    { value: "minimax/video-01/text-to-video", label: "MiniMax H3 Developer AI (AtlasCloud)" },
     { value: "bytedance/seedance-2.0-mini/text-to-video", label: "Seedance 2.0 Mini (Lowest Credits)" },
     { value: "kling-v2.0", label: "Kling v2.0 AI (AtlasCloud)" },
     { value: "google-veo", label: "Google Veo 4K Cinema" },
     { value: "runway-gen3", label: "Runway Gen-3 Alpha" },
     { value: "luma-dream-machine", label: "Luma Dream Machine" },
     { value: "pika-2.0", label: "Pika 2.0 Motion" },
-    { value: "hailuo-minimax", label: "Hailuo MiniMax AI" },
   ];
 
   const handleDrag = (e: DragEvent<HTMLDivElement>) => {
@@ -787,6 +787,22 @@ export default function Home() {
                       &quot;{scene.narration}&quot;
                     </p>
 
+                    {/* Scene Video Player Preview */}
+                    <div className="my-3 overflow-hidden rounded-xl border border-zinc-800 bg-black">
+                      <video
+                        key={`${plan.id}-${scene.order}`}
+                        controls
+                        preload="metadata"
+                        className="w-full aspect-video object-cover"
+                      >
+                        <source
+                          src={`${API_BASE_URL}/exports/${plan.id}/videos/scene_${String(scene.order).padStart(3, "0")}.mp4`}
+                          type="video/mp4"
+                        />
+                        Your browser does not support HTML5 video playback.
+                      </video>
+                    </div>
+
                     {/* Shots Breakdown */}
                     {scene.shots && scene.shots.length > 0 && (
                       <div className="space-y-2 mt-3 pt-3 border-t border-zinc-800/80">
@@ -1044,21 +1060,32 @@ export default function Home() {
             )}
 
             {/* Final Stitched Movie Player */}
-            {movieExport?.final_movie_path && (
-              <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 space-y-4">
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between">
                 <h3 className="font-bold text-sm text-white flex items-center space-x-2">
                   <Film className="w-4 h-4 text-emerald-400" />
                   <span>Stitched Final Movie Asset</span>
                 </h3>
-                <video controls className="w-full rounded-xl border border-zinc-800 aspect-video bg-black shadow-2xl">
-                  <source
-                    src={`${API_BASE_URL}/exports/${plan.id}/final_movie.mp4`}
-                    type="video/mp4"
-                  />
-                  Your browser does not support video playback.
-                </video>
+                <a
+                  href={`${API_BASE_URL}/exports/${plan.id}/final_movie.mp4`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-amber-400 hover:underline flex items-center space-x-1"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Direct Download MP4</span>
+                </a>
               </div>
-            )}
+              <video
+                key={plan.id}
+                controls
+                preload="metadata"
+                className="w-full rounded-xl border border-zinc-800 aspect-video bg-black shadow-2xl"
+              >
+                <source src={`${API_BASE_URL}/exports/${plan.id}/final_movie.mp4`} type="video/mp4" />
+                Your browser does not support video playback.
+              </video>
+            </div>
           </div>
         )}
 
