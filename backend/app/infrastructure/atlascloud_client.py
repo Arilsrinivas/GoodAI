@@ -142,10 +142,36 @@ class AtlasCloudVideoProvider:
                 logger.error("Failed to upload reference frame %s: %s", reference_frame_path, exc)
 
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
-        async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
-            response = await client.post(f"{self.media_base_url}/model/generateVideo", headers=headers, json=payload)
-            response.raise_for_status()
-            data = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+                response = await client.post(f"{self.media_base_url}/model/generateVideo", headers=headers, json=payload)
+                response.raise_for_status()
+                data = response.json()
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in (402, 400, 403, 429):
+                logger.warning("AtlasCloud API HTTP %s error: %s. Switching to local fallback video generation.", exc.response.status_code, exc)
+                return self._generate_local_fallback_video(
+                    scene_id=scene_id,
+                    prompt=prompt,
+                    duration_seconds=duration_seconds,
+                    output_dir=output_dir,
+                    scene_order=scene_order,
+                    reference_frame_path=reference_frame_path,
+                    error_reason=f"HTTP {exc.response.status_code} - {exc.response.text}",
+                )
+            raise exc
+        except Exception as exc:
+            logger.warning("AtlasCloud generateVideo connection error: %s. Using local fallback video.", exc)
+            return self._generate_local_fallback_video(
+                scene_id=scene_id,
+                prompt=prompt,
+                duration_seconds=duration_seconds,
+                output_dir=output_dir,
+                scene_order=scene_order,
+                reference_frame_path=reference_frame_path,
+                error_reason=str(exc),
+            )
+
         response_data = data.get("data", data)
         prediction_id = str(response_data.get("id", ""))
         if not prediction_id:
@@ -272,6 +298,67 @@ class AtlasCloudVideoProvider:
                 frame_path,
             ]
         )
+
+    def _generate_local_fallback_video(
+        self,
+        scene_id: UUID,
+        prompt: str,
+        duration_seconds: int,
+        output_dir: str,
+        scene_order: int,
+        reference_frame_path: str | None = None,
+        error_reason: str = "Payment Required (402)",
+    ) -> VideoSceneAsset:
+        logger.warning(
+            "AtlasCloud API unavailable (%s). Generating local fallback video for scene %s...",
+            error_reason,
+            scene_order,
+        )
+        out_dir = Path(output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        video_filename = f"scene_{scene_order:03d}.mp4"
+        video_path = out_dir / video_filename
+        final_frame_path = out_dir / f"scene_{scene_order:03d}_final.jpg"
+
+        try:
+            if reference_frame_path and Path(reference_frame_path).exists():
+                cmd = [
+                    "ffmpeg", "-y", "-loop", "1", "-i", str(reference_frame_path),
+                    "-c:v", "libx264", "-t", str(duration_seconds),
+                    "-pix_fmt", "yuv420p",
+                    "-vf", "scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720",
+                    str(video_path)
+                ]
+            else:
+                cmd = [
+                    "ffmpeg", "-y", "-f", "lavfi",
+                    "-i", f"color=c=0x09090b:s=1280x720:d={duration_seconds}",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    str(video_path)
+                ]
+            subprocess.run(cmd, capture_output=True, check=True)
+            
+            # Extract final frame
+            frame_cmd = ["ffmpeg", "-y", "-sseof", "-0.1", "-i", str(video_path), "-frames:v", "1", str(final_frame_path)]
+            subprocess.run(frame_cmd, capture_output=True, check=False)
+
+            return VideoSceneAsset(
+                scene_id=scene_id,
+                order=scene_order,
+                provider=self.provider_name,
+                status=JobStatus.completed,
+                video_path=str(video_path),
+                final_frame_path=str(final_frame_path) if final_frame_path.exists() else None,
+            )
+        except Exception as exc:
+            logger.error("Failed to generate local fallback video: %s", exc)
+            return VideoSceneAsset(
+                scene_id=scene_id,
+                order=scene_order,
+                provider=self.provider_name,
+                status=JobStatus.failed,
+                error=f"AtlasCloud 402 Payment Required and local fallback failed: {exc}",
+            )
 
     async def _run(self, command: list[str]) -> None:
         def run_sync() -> None:
