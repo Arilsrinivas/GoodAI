@@ -23,6 +23,7 @@ import {
   Wand2,
   ChevronRight,
   Zap,
+  Video,
 } from "lucide-react";
 import { useState, useEffect, useRef, DragEvent, ChangeEvent } from "react";
 
@@ -216,6 +217,32 @@ export default function Home() {
   useEffect(() => {
     fetchSavedProjects();
   }, []);
+
+  useEffect(() => {
+    if (!plan?.id) {
+      setMovieExport(null);
+      return;
+    }
+    fetchExportForPlan(plan.id);
+  }, [plan?.id]);
+
+  const fetchExportForPlan = async (planId: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/story-jobs/${planId}/export`);
+      if (res.ok) {
+        const data = await res.json();
+        setMovieExport(data);
+        if (data.status === "processing") {
+          setIsExporting(true);
+          pollExportStatus(planId);
+        }
+      } else {
+        setMovieExport(null);
+      }
+    } catch {
+      setMovieExport(null);
+    }
+  };
 
   const fetchSavedProjects = async () => {
     try {
@@ -787,20 +814,37 @@ export default function Home() {
                     </p>
 
                     {/* Scene Video Player Preview */}
-                    <div className="my-3 overflow-hidden rounded-xl border border-zinc-800 bg-black">
-                      <video
-                        key={`${plan.id}-${scene.order}`}
-                        controls
-                        preload="metadata"
-                        className="w-full aspect-video object-cover"
-                      >
-                        <source
-                          src={`${API_BASE_URL}/exports/${plan.id}/videos/scene_${String(scene.order).padStart(3, "0")}.mp4`}
-                          type="video/mp4"
-                        />
-                        Your browser does not support HTML5 video playback.
-                      </video>
-                    </div>
+                    {(() => {
+                      const sceneAsset = movieExport?.video_assets?.find((a) => a.order === scene.order);
+                      const isCompleted = sceneAsset?.status === "completed" || (movieExport?.status === "completed" && sceneAsset?.video_path);
+                      if (isCompleted) {
+                        return (
+                          <div className="my-3 overflow-hidden rounded-xl border border-zinc-800 bg-black">
+                            <video
+                              key={`${plan.id}-${scene.order}`}
+                              controls
+                              preload="metadata"
+                              className="w-full aspect-video object-cover"
+                            >
+                              <source
+                                src={`${API_BASE_URL}/exports/${plan.id}/videos/scene_${String(scene.order).padStart(3, "0")}.mp4`}
+                                type="video/mp4"
+                              />
+                              Your browser does not support HTML5 video playback.
+                            </video>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="my-2 p-2.5 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 flex items-center justify-between text-xs text-zinc-500">
+                          <span className="flex items-center space-x-1.5">
+                            <Video className="w-3.5 h-3.5 text-zinc-600" />
+                            <span>Clip render pending</span>
+                          </span>
+                          <span className="text-[10px] text-zinc-600 font-mono">Run Export to generate</span>
+                        </div>
+                      );
+                    })()}
 
                     {/* Shots Breakdown */}
                     {scene.shots && scene.shots.length > 0 && (
@@ -1059,32 +1103,57 @@ export default function Home() {
             )}
 
             {/* Final Stitched Movie Player */}
-            <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm text-white flex items-center space-x-2">
-                  <Film className="w-4 h-4 text-emerald-400" />
-                  <span>Stitched Final Movie Asset</span>
-                </h3>
-                <a
-                  href={`${API_BASE_URL}/exports/${plan.id}/final_movie.mp4`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-amber-400 hover:underline flex items-center space-x-1"
+            {movieExport?.status === "completed" && movieExport.final_movie_path ? (
+              <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-white flex items-center space-x-2">
+                    <Film className="w-4 h-4 text-emerald-400" />
+                    <span>Stitched Final Movie Asset</span>
+                  </h3>
+                  <a
+                    href={`${API_BASE_URL}/exports/${plan.id}/final_movie.mp4`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-amber-400 hover:underline flex items-center space-x-1"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Direct Download MP4</span>
+                  </a>
+                </div>
+                <video
+                  key={plan.id}
+                  controls
+                  autoPlay
+                  preload="auto"
+                  className="w-full rounded-xl border border-zinc-800 aspect-video bg-black shadow-2xl"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Direct Download MP4</span>
-                </a>
+                  <source src={`${API_BASE_URL}/exports/${plan.id}/final_movie.mp4`} type="video/mp4" />
+                  Your browser does not support video playback.
+                </video>
               </div>
-              <video
-                key={plan.id}
-                controls
-                preload="metadata"
-                className="w-full rounded-xl border border-zinc-800 aspect-video bg-black shadow-2xl"
-              >
-                <source src={`${API_BASE_URL}/exports/${plan.id}/final_movie.mp4`} type="video/mp4" />
-                Your browser does not support video playback.
-              </video>
-            </div>
+            ) : isExporting || movieExport?.status === "processing" ? (
+              <div className="bg-zinc-900/80 border border-amber-500/30 rounded-2xl p-8 text-center space-y-3">
+                <Loader2 className="w-8 h-8 mx-auto text-amber-400 animate-spin" />
+                <h3 className="font-bold text-sm text-white">Rendering In Progress...</h3>
+                <p className="text-xs text-zinc-400">
+                  Generating video clips ({completedAssetsCount}/{totalAssetsCount}) and assembling full movie with synchronized audio.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-8 text-center space-y-3">
+                <Film className="w-8 h-8 mx-auto text-zinc-600" />
+                <h3 className="font-bold text-sm text-white">No Rendered Movie Yet</h3>
+                <p className="text-xs text-zinc-400">
+                  Click the button below to generate all scenes with Seedance AI and compile the final stitched movie.
+                </p>
+                <button
+                  onClick={triggerVideoExport}
+                  className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-bold text-xs rounded-xl shadow-lg transition"
+                >
+                  Start Full Production Export
+                </button>
+              </div>
+            )}
           </div>
         )}
 
